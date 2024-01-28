@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" integrity="sha512-vKMx8UnXk60zUwyUnUPM3HbQo8QfmNx7+ltw8Pm5zLusl1XIfwcxo8DbWCqMGKaWeNxWA8yrx5v3SaVpMvR3CA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <title>Document</title>
     <style>
         @import url(https://fonts.googleapis.com/css?family=Roboto:300);
@@ -108,13 +109,73 @@
 <body>
     <div class="login-page">
         <div class="form">
-          <form class="login-form" method='post' action=''>
+          <form id="downloadForm" class="login-form" method='post' action="{% url 'home' %}">
             {% csrf_token %}
-            <input type="text" placeholder="Insert Youtube Link"/>
-            <button>Download</button>
+            {% comment %} <label for="">Enter Youtube Video URL:</label> {% endcomment %}
+            <h4>Download Youtube Videos</h4>
+            <input type="text" name="get_link" placeholder="Enter Youtube Video URL"/ required>
+            <button onclick="downloadWithProgress()">Download</button>
             
           </form>
         </div>
+        <div id="progressContainer" style="display: none;">
+            <p>Downloading... <span id="progressPercent">0%</span></p>
+            <progress id="progressBar" max="100" value="0"></progress>
+        </div>
       </div>
+      <script>
+        function downloadWithProgress() {
+            document.getElementById('progressContainer').style.display = 'block';
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '{% url "home" %}', true);
+
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    var progressBar = document.getElementById('progressBar');
+                    var progressPercent = document.getElementById('progressPercent');
+
+                    progressBar.value = response.percent;
+                    progressPercent.innerText = response.percent.toFixed(2) + '%';
+
+                    if (response.percent === 100) {
+                        location.reload();  // Reload the page on completion
+                    }
+                }
+            };
+
+            xhr.send(new FormData(document.getElementById('downloadForm')));
+        }
+    </script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js" integrity="sha512-VEd+nq25CkR676O+pLBnDW09R7VQX9Mdiij052gVCp5yVH3jGtH70Ho/UUv4mJDsEdTvqRCFZg0NKGiojGnUCw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        {% if messages %}
+            document.addEventListener("DOMContentLoaded", function(event) {
+                toastr.options = { 
+                  "closeButton": false,
+                  "debug": false,
+                  "newestOnTop": false,
+                  "progressBar": false,
+                  "positionClass": "toast-top-right",
+                  "preventDuplicates": false,
+                  "onclick": null,
+                  "showDuration": "300",
+                  "hideDuration": "1000",
+                  "timeOut": "5000",
+                  "extendedTimeOut": "1000",
+                  "showEasing": "swing",
+                  "hideEasing": "linear",
+                  "showMethod": "fadeIn",
+                  "hideMethod": "fadeOut"
+                  };
+                {% autoescape off %}
+                    {% for msg in messages %}
+                        toastr.{{ msg.level_tag }}("{{ msg }}");
+                    {% endfor %}
+                {% endautoescape %}
+            });
+        {% endif %}
+        </script>
 </body>
 </html>
